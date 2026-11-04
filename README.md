@@ -46,7 +46,7 @@ shop-impero-supplier-sync
 ### 1. Klon og installer
 
 ```bash
-git clone https://github.com/Pasture-x-Impero/shop-impero-supplier-sync.git
+git clone https://github.com/impero-no/shop-impero-supplier-sync.git
 cd shop-impero-supplier-sync
 npm install
 ```
