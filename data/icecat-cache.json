@@ -17343,7 +17343,7 @@
     },
     "ean:810119102768": {
       "status": "not_found",
-      "lastCheckedAt": "2026-10-23T01:39:37.920Z"
+      "lastCheckedAt": "2026-11-06T03:30:35.550Z"
     },
     "ean:195892142607": {
       "status": "matched",
@@ -17357,7 +17357,7 @@
     },
     "ean:7090043791235": {
       "status": "not_found",
-      "lastCheckedAt": "2026-10-23T01:39:46.842Z"
+      "lastCheckedAt": "2026-11-06T03:30:48.752Z"
     },
     "ean:198157472259": {
       "status": "matched",
@@ -17493,6 +17493,14 @@
         "tastaturoppsett": "Nordisk"
       },
       "nameSource": "icecat"
+    },
+    "ean:195892150169": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-06T03:30:41.638Z",
+      "name": null,
+      "specs": {
+        "produkttype": "Display Privacy Filters"
+      }
     }
   }
 }
