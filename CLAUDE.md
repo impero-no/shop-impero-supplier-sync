@@ -61,8 +61,21 @@ tdsynnex-sync.yml / also-sync.yml / isicom-sync.yml
 
 Dette repoet har aldri en Supabase nøkkel. `service_role` er en plattformhemmelighet i
 Lovable Cloud. All databaselogikk ligger i `supabase/functions/price-sync/index.ts` i
-`impero-shop` prosjektet. Trengs en endring i logikk eller skjema, be Lovable agenten
-for `impero-shop` om det. Ikke forsøk SQL direkte.
+`impero-shop` prosjektet. Se "Endringer i `impero-shop`" under for hvordan endringer
+gjøres.
+
+### Endringer i `impero-shop`
+
+**Send aldri meldinger til Lovable agenten** (`send_message` eller lignende). Endringer
+gjøres direkte:
+
+- **Database (funksjoner, tabeller, data):** kjør SQL med Lovable MCP sin
+  `query_database`, og legg den samme SQL en som migrasjonsfil i
+  `impero-shop/supabase/migrations/` (PR mot `main`). Uten migrasjonsfilen kan endringen
+  bli overskrevet neste gang Lovable endrer samme funksjon. Sjekk alltid gjeldende
+  definisjon med `pg_get_functiondef` før `CREATE OR REPLACE`, og verifiser etterpå.
+- **Kode og Edge Functions:** endre i `impero-shop` repoet (PR mot `main`), og bruk
+  `deploy_project` for å publisere.
 
 Edge Functions dette repoet snakker med:
 
