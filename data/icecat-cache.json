@@ -17501,6 +17501,25 @@
       "specs": {
         "produkttype": "Display Privacy Filters"
       }
+    },
+    "ean:195892119739": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-14T03:24:39.183Z",
+      "name": null,
+      "specs": {
+        "produkttype": "Laptop Accessories"
+      }
+    },
+    "ean:195892147671": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-14T03:24:42.721Z",
+      "name": "Lenovo 100 W GaN USB-C laptoplader, svart",
+      "specs": {
+        "produkttype": "Mobile Device Chargers",
+        "farge": "Black"
+      },
+      "nameSource": "power",
+      "imageUrl": "https://media.power-cdn.net/images/h-b8486bec15cdd597954f63cb7b43f007/products/4316319/4316319_9_1200x1200_w_g.jpg"
     }
   }
 }
