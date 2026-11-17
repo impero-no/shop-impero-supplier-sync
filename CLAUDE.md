@@ -34,7 +34,8 @@ kun fordi navn og bilde fallbacken i `src/enrichment/competitor-name.ts` bruker 
   fornyelse. `github-secrets.ts` oppdaterer GitHub Secrets trygt (execFile, ikke shell).
 - `data/icecat-cache.json` — git committed cache, se "Icecat berikelse".
 - `.github/workflows/` — `tdsynnex-sync.yml` (daglig kl. 23:20 UTC, rett etter midnatt norsk tid), `also-sync.yml` (daglig,
-  disabled), `isicom-sync.yml` (manuell), `session-renewal.yml` (disabled).
+  disabled), `isicom-sync.yml` (manuell), `session-renewal.yml` (disabled),
+  `icecat-shrink.yml` (manuell, se "Bildestørrelse").
 
 ## Teknisk arkitektur
 
@@ -194,6 +195,15 @@ kuratert bilde). Frem til det er gjort ignoreres feltet trygt.
 `tdsynnex-sync.yml` kaller `import-icecat-images` etter synken (inntil 12 kall à 60
 produkter) slik at nye produkter får bilde fra dag én. Lovable sin publiseringstrigger
 krever bilde, MPN og rapportert lager for at et produkt kan gjøres synlig.
+
+### Bildestørrelse
+
+`import-icecat-images` lagrer originalen i `product-images/icecat/` og gir produktet en
+WebP på maks 1200 px (kvalitet 75) i `icecat-web/`. Skaleringen gjøres én gang av
+Supabase sin bildeskalering (`/render/image/`) og lagres som vanlig fil. Butikken og
+`catalog-feed` bruker aldri `/render/image/`. Feiler skaleringen, får produktet
+originalen. `icecat-shrink.yml` kaller `shrink-icecat-images`, som gjør det samme med
+produkter som fortsatt peker på `icecat/` (også de der skaleringen feilet om natten).
 
 ## Konkurrent fetcherne (kun navn/bilde fallback her)
 
