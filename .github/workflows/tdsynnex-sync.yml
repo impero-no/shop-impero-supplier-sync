@@ -23,6 +23,7 @@ on:
         type: choice
         options:
           - tdsynnex
+          - tdsynnex-add
           - full
           - tdsynnex-debug
           - tdsynnex-debug-batch
@@ -35,7 +36,7 @@ on:
           - mpns-debug
           - icecat-images
       part:
-        description: 'Del-/varenummer for debug-moduser (komma-separert liste for tdsynnex-debug-batch), ELLER produsentnavn for tdsynnex-discover (f.eks. "Apple")'
+        description: 'Del-/varenummer for debug-moduser (komma-separert liste for tdsynnex-debug-batch og tdsynnex-add), ELLER produsentnavn for tdsynnex-discover (f.eks. "Apple")'
         required: false
         type: string
       filter:
@@ -118,7 +119,7 @@ jobs:
       # returnerer den umiddelbart med remaining=0. Nye produkter får dermed
       # bilde samme dag de kommer inn. Feil her skal aldri felle selve synken.
       - name: Hent bilder fra Icecat for nye produkter uten bilde
-        if: contains(fromJSON('["tdsynnex","full","icecat-images"]'), github.event.inputs.mode || 'tdsynnex')
+        if: contains(fromJSON('["tdsynnex","tdsynnex-add","full","icecat-images"]'), github.event.inputs.mode || 'tdsynnex')
         continue-on-error: true
         env:
           PRICE_SYNC_SECRET: ${{ secrets.PRICE_SYNC_SECRET }}

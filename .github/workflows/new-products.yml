@@ -1,0 +1,129 @@
+name: Nye produkter
+
+# Ukentlig oppdagelse av nye produkter hos TD Synnex (2026-11-17). Den daglige
+# synken henter bare MPN-er som allerede finnes i shoppen, så nye modeller
+# kommer aldri inn av seg selv. Denne jobben ser gjennom segmentene i
+# config/new-product-watch.json, legger nye varer inn SKJULT og lager et
+# GitHub-issue med listen (tildelt, så det kommer på e-post).
+# Se src/discovery/new-products.ts for design og sikringer.
+
+on:
+  schedule:
+    # Mandag 04:47 UTC (05:47/06:47 norsk tid): etter nattens TD Synnex-synk,
+    # og skjevt minutt fordi hel time starter forsinket (se tdsynnex-sync.yml).
+    - cron: '47 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      max_new:
+        description: 'Tak på antall nye produkter i denne kjøringen (tomt = verdien i config/new-product-watch.json)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Kun vis hva som ville blitt lagt inn, skriv ingenting'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: new-products
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Finn nye produkter
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write   # commit av data/seen-catalogue.json og icecat-cache
+      issues: write     # issue med listen over nye produkter
+
+    steps:
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Installer avhengigheter
+        run: npm ci
+
+      - name: Finn og legg inn nye produkter
+        run: node --experimental-strip-types src/sync.ts new-products "${{ github.event.inputs.max_new }}" ${{ github.event.inputs.dry_run == 'true' && 'dry-run' || '' }}
+        env:
+          PRICE_SYNC_SECRET: ${{ secrets.PRICE_SYNC_SECRET }}
+          TDSYNNEX_CLIENT_ID: ${{ secrets.TDSYNNEX_CLIENT_ID }}
+          TDSYNNEX_CLIENT_SECRET: ${{ secrets.TDSYNNEX_CLIENT_SECRET }}
+
+      - name: Lagre sett-liste og Icecat-cache
+        # Kjøres også når synken feilet: det som ble registrert før feilen skal
+        # ikke vurderes på nytt neste uke.
+        if: always()
+        continue-on-error: true
+        run: |
+          git add data/seen-catalogue.json data/icecat-cache.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: oppdater sett-liste for nye produkter [skip ci]"
+            git pull --rebase origin "${{ github.ref_name }}"
+            git push
+          else
+            echo "Ingen endringer å lagre."
+          fi
+
+      - name: Hent bilder fra Icecat for nye produkter
+        if: hashFiles('new-products-report.md') != ''
+        continue-on-error: true
+        env:
+          PRICE_SYNC_SECRET: ${{ secrets.PRICE_SYNC_SECRET }}
+        run: |
+          URL="https://umnxckqgnlohvawvfgzv.supabase.co/functions/v1/import-icecat-images"
+          for i in 1 2 3; do
+            resp=$(curl -sS -m 400 -X POST "$URL" -H "Content-Type: application/json" \
+              -H "x-price-sync-secret: $PRICE_SYNC_SECRET" -d '{"limit":60,"concurrency":6}') || break
+            echo "Icecat batch $i: $resp"
+            echo "$resp" | grep -q '"remaining":0' && break
+          done
+
+      - name: Lag issue med nye produkter
+        # Tildeles repo-variabelen NEW_PRODUCTS_ASSIGNEE hvis den er satt,
+        # ellers den som sist satte opp/kjørte workflowen. Tildeling gir e-post.
+        if: always() && hashFiles('new-products-report.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSIGNEE: ${{ vars.NEW_PRODUCTS_ASSIGNEE || github.triggering_actor }}
+        run: |
+          title="Nye produkter hos TD Synnex $(date -u +%d.%m.%Y)"
+          body="$(cat new-products-report.md)
+
+          ---
+          Kjøring: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue create --title "$title" --body "$body" --assignee "$ASSIGNEE" \
+            || gh issue create --title "$title" --body "$body"
+
+      - name: Send Slack-varsel
+        if: always() && hashFiles('new-products-report.md') != '' && env.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🆕 *Nye produkter hos TD Synnex*, se issue i ${{ github.server_url }}/${{ github.repository }}/issues"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Send Slack-varsel ved feil
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "⚠️ *Nye produkter-jobben feilet*: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

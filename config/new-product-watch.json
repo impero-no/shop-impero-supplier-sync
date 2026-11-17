@@ -1,0 +1,6 @@
+{
+  "maxNewPerRun": 30,
+  "segments": [
+    { "label": "Apple bærbare", "manufacturer": "Apple", "class": "COMPORT", "subclass": "NOTEBOOKS" }
+  ]
+}

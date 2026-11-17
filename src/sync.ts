@@ -79,6 +79,16 @@ import { lookupIcecatProduct } from './enrichment/icecat.ts';
 import { shortenName, buildSpecs, isMeaningfulModelName } from './enrichment/normalize.ts';
 import { lookupCompetitorName } from './enrichment/competitor-name.ts';
 import type { SupplierSyncResult } from './types.ts';
+import { readFile, writeFile } from 'node:fs/promises';
+import {
+  planSegment,
+  applySeen,
+  buildReport,
+  segmentKey,
+  type WatchConfig,
+  type SeenCatalogue,
+  type SegmentPlan,
+} from './discovery/new-products.ts';
 
 function logEnrichment(label: string, enriched: number, enrichedViaCompetitor: number, missing: number, errors: number) {
   const viaCompetitorSuffix = enrichedViaCompetitor > 0 ? ` (${enrichedViaCompetitor} via Power/Komplett/Dustin)` : '';
@@ -423,7 +433,7 @@ if (mode === 'tdsynnex-discover') {
     }
     for (const p of filtered.sort((a, b) => (a.price_ex_vat ?? 0) - (b.price_ex_vat ?? 0))) {
       console.log(
-        `${p.mpn.padEnd(16)} | ean ${(p.ean ?? '—').padEnd(14)} | ${p.price_ex_vat ?? '—'} kr ekskl. mva | lager ${p.available_qty} | ${p.name}`
+        `${p.mpn.padEnd(16)} | ean ${(p.ean ?? '—').padEnd(14)} | ${p.price_ex_vat ?? '—'} kr ekskl. mva | lager ${p.available_qty} | ${p.category1 ?? '—'} / ${p.category2 ?? '—'} | ${p.name}`
       );
     }
   } catch (err) {
@@ -452,7 +462,7 @@ if (mode === 'tdsynnex-debug-batch') {
     console.log(`\nFant ${products.length} av ${mpns.length}:\n`);
     for (const p of products) {
       console.log(
-        `${p.mpn.padEnd(16)} | ean ${(p.ean ?? '—').padEnd(14)} | ${p.price_ex_vat ?? '—'} kr ekskl. mva | lager ${p.available_qty} | ${p.name}`
+        `${p.mpn.padEnd(16)} | ean ${(p.ean ?? '—').padEnd(14)} | ${p.price_ex_vat ?? '—'} kr ekskl. mva | lager ${p.available_qty} | ${p.category1 ?? '—'} / ${p.category2 ?? '—'} | ${p.name}`
       );
     }
     const found = new Set(products.map(p => p.mpn.toLowerCase()));
@@ -463,6 +473,122 @@ if (mode === 'tdsynnex-debug-batch') {
     process.exit(1);
   }
   process.exit(0);
+}
+
+// ────────────────────────────────
+// Legg inn bestemte nye MPN-er (2026-11-17). Henter dem hos TD Synnex,
+// beriker (navn/specs/bilde) og sender dem til price-sync, som oppretter dem
+// som skjulte produkter. ALDRI finalize: kjøringen inneholder bare disse
+// MPN-ene, og finalize ville nullstilt lageret på resten av katalogen.
+// Eksempel: node sync.ts tdsynnex-add "MHWT4H/A,MHWU4H/A"
+// ────────────────────────────────
+if (mode === 'tdsynnex-add') {
+  const mpns = (process.argv[3] ?? '').split(',').map(s => s.trim()).filter(Boolean);
+  if (mpns.length === 0 || mpns.length > 50) {
+    console.error('❌ Oppgi 1-50 komma-separerte MPN-er som tredje argument.');
+    process.exit(1);
+  }
+  console.log(`━━━ TD Synnex: legg inn ${mpns.length} MPN-er ━━━`);
+  try {
+    const products = await fetchTDSynnexByMPN(mpns);
+    const found = new Set(products.map(p => p.mpn.toUpperCase()));
+    const missing = mpns.filter(m => !found.has(m.toUpperCase()));
+    console.log(`Fant ${products.length} av ${mpns.length} hos TD Synnex.`);
+    if (missing.length) console.log(`⚠️ Ikke funnet hos TD Synnex: ${missing.join(', ')}`);
+    const { items, enriched, enrichedViaCompetitor, missing: noEnrich, errors: enrichErrors } = await enrichProducts(products);
+    logEnrichment('TD Synnex', enriched, enrichedViaCompetitor, noEnrich, enrichErrors);
+    const result = await syncSupplierPrices('tdsynnex', items, { allowFinalize: false });
+    results.push(result);
+    printResult('TD Synnex (nye MPN-er)', result);
+    for (const p of items) {
+      console.log(`  ${p.mpn.padEnd(14)} | ${p.price_ex_vat ?? '—'} kr | lager ${p.available_qty} | ${p.name}`);
+    }
+  } catch (err) {
+    console.error('❌ tdsynnex-add feilet:', err);
+    results.push(failedResult('tdsynnex', err));
+  }
+  console.log();
+}
+
+// ────────────────────────────────
+// Ukentlig oppdagelse av nye produkter (2026-11-17), se
+// src/discovery/new-products.ts for hele designet og sikringene.
+// Argumenter: [maxNew] [dry-run]
+// Skriver data/seen-catalogue.json og new-products-report.md (workflowen
+// committer det første og lager et GitHub-issue av det andre).
+// ────────────────────────────────
+if (mode === 'new-products') {
+  const dryRun = process.argv.slice(3).includes('dry-run');
+  const config: WatchConfig = JSON.parse(await readFile('config/new-product-watch.json', 'utf8'));
+  const maxArg = Number(process.argv[3]);
+  const maxNewPerRun = Number.isFinite(maxArg) && maxArg > 0 ? maxArg : config.maxNewPerRun;
+  const seenPath = 'data/seen-catalogue.json';
+  const seen: SeenCatalogue = JSON.parse(await readFile(seenPath, 'utf8').catch(() => '{}'));
+  const today = new Date().toISOString().slice(0, 10);
+  const errors: string[] = [];
+
+  console.log(`━━━ Nye produkter hos TD Synnex${dryRun ? ' (dry run, skriver ingenting)' : ''} ━━━`);
+  const knownMpns = new Set((await getKnownMpns()).map(m => m.toUpperCase()));
+  const plans: SegmentPlan[] = [];
+
+  for (const segment of config.segments) {
+    try {
+      const fetched = await fetchTDSynnexByManufacturers(
+        [segment.manufacturer],
+        segment.class ? { class: segment.class, subclass: segment.subclass } : undefined
+      );
+      if (fetched.length >= 10000) {
+        throw new Error(`${segmentKey(segment)} traff 10 000-rads-cap, segmentet er for bredt`);
+      }
+      const plan = planSegment(segment, fetched, seen[segmentKey(segment)], knownMpns);
+      plans.push(plan);
+      console.log(
+        `[${plan.label}] ${plan.fetched} hentet${plan.baseline ? ', FØRSTE KJØRING: registrerer alt som sett, oppretter ingenting' : ''}` +
+          ` | nye: ${plan.toCreate.length} | venter på lager: ${plan.waitingForStock.length} | registreres som sett: ${plan.markSeen.length}`
+      );
+      for (const p of plan.toCreate) console.log(`   + ${p.mpn.padEnd(14)} | ${p.price_ex_vat} kr | lager ${p.available_qty} | ${p.name}`);
+    } catch (err) {
+      errors.push(`${segmentKey(segment)}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  const toCreate = plans.flatMap(p => p.toCreate);
+  const capExceeded = toCreate.length > maxNewPerRun;
+  let created = 0;
+
+  if (capExceeded) {
+    console.warn(`⚠️ ${toCreate.length} nye er over taket på ${maxNewPerRun}. Oppretter ingenting og registrerer dem ikke som sett.`);
+  } else if (toCreate.length > 0 && !dryRun) {
+    const { items, enriched, enrichedViaCompetitor, missing, errors: enrichErrors } = await enrichProducts(toCreate);
+    logEnrichment('TD Synnex nye', enriched, enrichedViaCompetitor, missing, enrichErrors);
+    const result = await syncSupplierPrices('tdsynnex', items, { allowFinalize: false });
+    results.push(result);
+    printResult('TD Synnex (nye produkter)', result);
+    created = result.productsCreated;
+    errors.push(...result.errors);
+  }
+
+  if (!dryRun) {
+    for (const plan of plans) {
+      // Over taket: registrer kun baseline/kjente, ikke kandidatene, så de vurderes på nytt.
+      const createdMpns = new Set(plan.toCreate.map(p => p.mpn.toUpperCase()));
+      const mark = capExceeded ? plan.markSeen.filter(m => !createdMpns.has(m)) : plan.markSeen;
+      applySeen(seen, plan.key, mark, today);
+    }
+    await writeFile(seenPath, JSON.stringify(seen, null, 2) + '\n');
+  }
+
+  const report = buildReport({ plans, created, capExceeded, maxNewPerRun, errors });
+  if (report) {
+    console.log('\n' + report);
+    if (!dryRun) await writeFile('new-products-report.md', report);
+  } else {
+    console.log('Ingen nye produkter denne uken.');
+  }
+  // Segmentfeil skal gi rød kjøring selv om opprettelsen i seg selv gikk fint.
+  const segmentErrors = errors.filter(e => !results.some(r => r.errors.includes(e)));
+  if (segmentErrors.length > 0) results.push(failedResult('tdsynnex', segmentErrors.join('; ')));
+  console.log();
 }
 
 if (mode === 'tdsynnex-debug-tdpn') {
