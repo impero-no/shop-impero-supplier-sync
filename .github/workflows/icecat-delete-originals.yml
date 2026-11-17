@@ -1,0 +1,43 @@
+name: Slett Icecat-originaler
+
+# Kaller Edge Function `delete-icecat-originals` i impero-shop. Den sletter
+# filer i product-images/icecat/ som ingen produkter, produktbilder, pakker
+# eller ordrer peker på lenger. Kun manuell start, og prøvekjøring som standard.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slett:
+        description: 'Slett faktisk (ellers bare prøvekjøring som viser hva som ville blitt slettet)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  delete:
+    name: Slett ubrukte Icecat-originaler
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Kall delete-icecat-originals
+        env:
+          PRICE_SYNC_SECRET: ${{ secrets.PRICE_SYNC_SECRET }}
+          SLETT: ${{ github.event.inputs.slett }}
+        run: |
+          URL="https://umnxckqgnlohvawvfgzv.supabase.co/functions/v1/delete-icecat-originals"
+          if [ "$SLETT" = "true" ]; then payload='{"dry_run":false,"confirm":"slett"}'; else payload='{"dry_run":true}'; fi
+          resp=$(curl -sS -m 600 -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -H "x-price-sync-secret: $PRICE_SYNC_SECRET" \
+            -d "$payload")
+          echo "$resp"
+          echo "$resp" | node -e '
+            let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{
+              const j = JSON.parse(d);
+              if (j.error) { console.error(j.error); process.exit(1) }
+              console.log(`${j.dry_run ? "Prøvekjøring" : "Slettet"}: ${j.files} filer i icecat/, ${j.referenced} beholdes (i bruk), ${j.to_delete} (${j.to_delete_mb} MB) ${j.dry_run ? "ville blitt slettet" : "skulle slettes"}, ${j.deleted} slettet.`)
+              if ((j.errors ?? []).length) { console.error(j.errors.join("\n")); process.exit(1) }
+            })'
