@@ -9,7 +9,7 @@
     "sync:tdsynnex": "node --experimental-strip-types src/fetchers/tdsynnex.ts",
     "sync:isicom": "node --experimental-strip-types src/fetchers/isicom.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/enrichment/*.test.ts"
+    "test": "node --experimental-strip-types --test src/enrichment/*.test.ts src/discovery/*.test.ts"
   },
   "dependencies": {
     "node-fetch": "^3.3.2",

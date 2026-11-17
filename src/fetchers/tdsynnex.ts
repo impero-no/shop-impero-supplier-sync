@@ -274,6 +274,11 @@ function mapProduct(p: TDSynnexProduct): SupplierProduct | null {
     price_ex_vat: p.price?.customerPrice ?? null,
     available_qty: p.stock?.quantityAvailableTotal ?? 0,
     next_delivery_date: nextDelivery?.arrivalDate?.slice(0, 10) || null,
+    // TD Synnex sin egen class/subclass (f.eks. "COMPORT"/"NOTEBOOKS"). Sendes
+    // ikke til price-sync, men brukes i logger og av new-products for å vise
+    // hvilket segment en vare hører til.
+    category1: [p.class, p.classDesc].filter(Boolean).join(' ') || undefined,
+    category2: [p.subclass, p.subclassDesc].filter(Boolean).join(' ') || undefined,
     updated_at: new Date().toISOString(),
   };
 }

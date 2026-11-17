@@ -132,7 +132,12 @@ function toPayloadItem(item: SupplierProduct) {
  */
 export async function syncSupplierPrices(
   supplierKey: SupplierProduct['supplier'],
-  items: SupplierProduct[]
+  items: SupplierProduct[],
+  // allowFinalize=false: brukes når kjøringen bare inneholder ET UTVALG av
+  // leverandørens varer (tdsynnex-add, new-products). finalize nullstiller
+  // lager for alle rader leverandøren ikke leverte i kjøringen, så en kjøring
+  // med 10 nye MPN-er ville ellers vist resten av katalogen som utsolgt.
+  { allowFinalize = true }: { allowFinalize?: boolean } = {}
 ): Promise<SupplierSyncResult> {
   const start = Date.now();
 
@@ -171,8 +176,8 @@ export async function syncSupplierPrices(
     // e.l.), fikk ikke de produktene oppdatert lager — å nullstille dem da
     // ville feilaktig vist dem som "Utsolgt". Da hopper vi over finalize og
     // lar neste vellykkede synk rydde opp.
-    const finalize = isLast && !anyBatchFailed;
-    if (isLast && anyBatchFailed) {
+    const finalize = allowFinalize && isLast && !anyBatchFailed;
+    if (allowFinalize && isLast && anyBatchFailed) {
       console.warn(`[${supplierKey}] minst én batch feilet — hopper over lager-nullstilling (finalize) denne kjøringen.`);
     }
 
