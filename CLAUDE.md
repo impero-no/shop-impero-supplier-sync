@@ -33,8 +33,12 @@ kun fordi navn og bilde fallbacken i `src/enrichment/competitor-name.ts` bruker 
 - `src/utils/renew-also-session.ts` / `renew-isicom-session.ts` — Playwright cookie
   fornyelse. `github-secrets.ts` oppdaterer GitHub Secrets trygt (execFile, ikke shell).
 - `data/icecat-cache.json` — git committed cache, se "Icecat berikelse".
+- `src/discovery/new-products.ts` — ukentlig oppdagelse av nye produkter, se "Nye produkter".
+- `config/new-product-watch.json` — hvilke segmenter (produsent + class/subclass) som overvåkes.
+- `data/seen-catalogue.json` — git committed liste over MPN er som er sett per segment.
 - `.github/workflows/` — `tdsynnex-sync.yml` (daglig kl. 23:20 UTC, rett etter midnatt norsk tid), `also-sync.yml` (daglig,
-  disabled), `isicom-sync.yml` (manuell), `session-renewal.yml` (disabled).
+  disabled), `isicom-sync.yml` (manuell), `session-renewal.yml` (disabled), `new-products.yml`
+  (mandager 04:47 UTC).
 
 ## Teknisk arkitektur
 
@@ -142,6 +146,37 @@ i `products`/`product_supplier_prices` at et nytt felt faktisk lander.
 - Produsenter i lista: HP, Lenovo, Dell, Apple, Samsung, Jabra, Logitech, Philips.
   Microsoft fjernet (for mange endringer per dag), Asus/LG fjernet (ingen producer rad).
 
+## Nye produkter (`new-products`)
+
+Den daglige synken henter bare kjente MPN er, så nye modeller kommer aldri inn av seg
+selv. `new-products.yml` går gjennom segmentene i `config/new-product-watch.json` hver
+mandag og legger varer som er **nye hos TD Synnex siden forrige kjøring** inn skjult,
+deretter lages et tildelt issue med listen (gir e-post). Repo variabelen
+`NEW_PRODUCTS_ASSIGNEE` overstyrer hvem issuet tildeles.
+
+- Første kjøring per segment registrerer alt i `data/seen-catalogue.json` og oppretter
+  ingenting. Slik dukker aldri eldre varianter vi bevisst ikke har tatt inn opp som nye,
+  og et produkt admin sletter kommer ikke tilbake. Endres `class`/`subclass`/`nameFilter`
+  for et segment, blir det et nytt segment med ny baseline.
+- Filtre: CTO koder (`_CTO`, Apple `Z...`), varer uten pris, og varer uten lager eller
+  innkommende leveranse (de huskes ikke, så de plukkes opp når lageret kommer).
+- Tak: over `maxNewPerRun` (30) opprettes ingenting, issuet sier fra i stedet.
+- Kjøringen sender aldri `finalize`, se under.
+- Apple sine segmenter hos TD Synnex: `COMPORT:NOTEBOOKS` (MacBook), `COMDESK:DESKTOP`
+  (Mac mini, Mac Studio), `COMDESK:PCALLIN1` (iMac). Finn class for andre produkter med
+  `tdsynnex-debug-batch`, som viser class/subclass.
+- Nye Apple modeller har ofte verken Icecat data eller bilde de første ukene. Da får
+  produktet distributørens rå tekst som navn og mangler bilde. Rett navnet i admin
+  (låser det mot synken) og legg inn bilde før publisering.
+
+**`tdsynnex-add`** (valg i `tdsynnex-sync.yml`, `part` = komma separerte MPN er) legger
+inn bestemte MPN er manuelt på samme måte.
+
+**Aldri `finalize` på delkjøringer.** `price-sync` nullstiller lager for alle rader hos
+leverandøren som ikke var med i kjøringen når `finalize` er sann. Kjøringer som bare
+inneholder et utvalg varer (`tdsynnex-add`, `new-products`) bruker derfor
+`syncSupplierPrices(..., { allowFinalize: false })`.
+
 ## ALSO
 
 - Portal URL: `https://www.also.com/ec/cms5/2900/pricelistView.do?todo=download&filename=pricelist-1.txt.zip`
@@ -228,8 +263,10 @@ node --experimental-strip-types src/sync.ts also
 node --experimental-strip-types src/sync.ts isicom
 node --experimental-strip-types src/sync.ts full          # Bred TD Synnex skann, se advarsel
 node --experimental-strip-types src/sync.ts icecat-debug <mpn> [produsent] [ean]
+node --experimental-strip-types src/sync.ts tdsynnex-add <mpn,mpn,...>  # Legg inn bestemte MPN er
+node --experimental-strip-types src/sync.ts new-products [maks] [dry-run]
 npm run sync:also / sync:tdsynnex / sync:isicom            # Dry run, skriver ingenting
-npm test                                                   # 30 tester, node:test
+npm test                                                   # 37 tester, node:test
 npm run typecheck
 ```
 
