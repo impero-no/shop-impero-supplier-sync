@@ -17560,6 +17560,46 @@
       "specs": {},
       "nameSource": "power",
       "imageUrl": "https://media.power-cdn.net/images/h-1eb7bc65501af29631fc20f3cc164e49/products/4525603/4525603_42_1200x1200_w_g.jpg"
+    },
+    "ean:195951081618": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-17T15:32:49.702Z",
+      "name": "Apple MacBook Pro 14\" (M6) 16/1 TB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://www.komplett.no/product-media/b2c/nb-no/1200/1346485.jpg"
+    },
+    "ean:195951082080": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-17T15:32:52.568Z",
+      "name": "Apple MacBook Pro 14\" (M6) 24/1 TB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://www.komplett.no/product-media/b2c/nb-no/1200/1346447.jpg"
+    },
+    "ean:195951080208": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-17T15:33:00.228Z",
+      "name": "Apple MacBook Pro 14\" (M6) 16/1 TB, stellarsvart",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728264/apple-macbook-pro-2026-stellarsvart-apple-m6-1212-16gb-1000gb-142.jpg"
+    },
+    "ean:195951082554": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-17T15:33:05.138Z",
+      "name": "Apple MacBook Pro 14\" (M6) 32/1 TB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://www.komplett.no/product-media/b2c/nb-no/1200/1346490.jpg"
+    },
+    "ean:195951080673": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-17T15:33:16.751Z",
+      "name": "Apple MacBook Pro 14\" (M6) 24/1 TB, stellarsvart",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728264/apple-macbook-pro-2026-stellarsvart-apple-m6-1212-24gb-1000gb-142.jpg"
     }
   }
 }
