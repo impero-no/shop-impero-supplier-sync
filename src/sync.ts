@@ -535,7 +535,8 @@ if (mode === 'new-products') {
     try {
       const fetched = await fetchTDSynnexByManufacturers(
         [segment.manufacturer],
-        segment.class ? { class: segment.class, subclass: segment.subclass } : undefined
+        segment.class ? { class: segment.class, subclass: segment.subclass } : undefined,
+        { onlyInStock: segment.onlyInStock }
       );
       if (fetched.length >= 10000) {
         throw new Error(`${segmentKey(segment)} traff 10 000-rads-cap, segmentet er for bredt`);

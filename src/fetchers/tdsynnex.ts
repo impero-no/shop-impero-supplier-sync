@@ -308,7 +308,12 @@ export async function fetchTDSynnexFull(): Promise<SupplierProduct[]> {
  */
 export async function fetchTDSynnexByManufacturers(
   manufacturers: string[],
-  classFilter?: { class: string; subclass?: string }
+  classFilter?: { class: string; subclass?: string },
+  // onlyInStock (2026-11-17): Apple COMPORT:NOTEBOOKS traff 10 000-rads-cap
+  // selv med class/subclass, fordi >99 % av radene er CTO-koder uten lager.
+  // Med onlyInStock kommer bare varer med lager, som er det new-products
+  // uansett vil ha.
+  { onlyInStock = false }: { onlyInStock?: boolean } = {}
 ): Promise<SupplierProduct[]> {
   const results: SupplierProduct[] = [];
 
@@ -325,7 +330,7 @@ export async function fetchTDSynnexByManufacturers(
         productStatusCode: 'Active',
         includePrice: true,
         includeStock: true,
-        onlyInStock: false,
+        onlyInStock,
         page,
         pageSize: 100,
       });

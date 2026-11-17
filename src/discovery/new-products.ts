@@ -32,6 +32,13 @@ export interface WatchSegment {
   nameFilter?: string;
   /** Fri tekst for rapporten, f.eks. "Apple bærbare". */
   label?: string;
+  /**
+   * Spør TD Synnex kun etter varer med lager. Trengs for segmenter som ellers
+   * treffer 10 000-rads-cap (Apple bærbare, der nesten alt er CTO-koder).
+   * Ulempe: en eldre modell som var utsolgt ved baseline og kommer på lager
+   * igjen, blir meldt som ny. Den kan da slettes, og kommer ikke tilbake.
+   */
+  onlyInStock?: boolean;
 }
 
 export interface WatchConfig {
@@ -43,7 +50,7 @@ export interface WatchConfig {
 export type SeenCatalogue = Record<string, Record<string, string>>;
 
 export function segmentKey(s: WatchSegment): string {
-  return [s.manufacturer, s.class ?? '*', s.subclass ?? '*', s.nameFilter ?? ''].join('|');
+  return [s.manufacturer, s.class ?? '*', s.subclass ?? '*', s.nameFilter ?? '', s.onlyInStock ? 'instock' : ''].join('|');
 }
 
 export function segmentLabel(s: WatchSegment): string {

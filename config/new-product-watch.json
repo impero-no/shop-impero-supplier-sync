@@ -1,7 +1,7 @@
 {
   "maxNewPerRun": 30,
   "segments": [
-    { "label": "Apple bærbare", "manufacturer": "Apple", "class": "COMPORT", "subclass": "NOTEBOOKS" },
+    { "label": "Apple bærbare", "manufacturer": "Apple", "class": "COMPORT", "subclass": "NOTEBOOKS", "onlyInStock": true },
     { "label": "Apple stasjonære (Mac mini, Mac Studio)", "manufacturer": "Apple", "class": "COMDESK", "subclass": "DESKTOP" },
     { "label": "Apple alt-i-ett (iMac)", "manufacturer": "Apple", "class": "COMDESK", "subclass": "PCALLIN1" }
   ]
