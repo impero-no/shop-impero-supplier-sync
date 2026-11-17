@@ -1,0 +1,62 @@
+name: Icecat-bilder til WebP (engangsjobb)
+
+# Kaller Edge Function `shrink-icecat-images` i impero-shop, som lager WebP-
+# versjoner (maks 1200 px, kvalitet 75) av Icecat-bilder som ligger i
+# originalstørrelse, og bytter produktenes bilde-URL over til dem.
+# Originalene slettes ikke. Kun manuell start.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Valgfritt: kommaseparert liste med produkt-id, MPN eller EAN (for å teste noen få)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Bare vis hva som ville blitt gjort'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  shrink:
+    name: Gjør Icecat-bilder mindre
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Kjør i bunker til alt er behandlet
+        env:
+          PRICE_SYNC_SECRET: ${{ secrets.PRICE_SYNC_SECRET }}
+          ONLY: ${{ github.event.inputs.only }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          URL="https://umnxckqgnlohvawvfgzv.supabase.co/functions/v1/shrink-icecat-images"
+          after=""; total=0; shrunk=0; failed=0; bytes=0
+          for i in $(seq 1 200); do
+            payload=$(AFTER="$after" node -e '
+              const only = (process.env.ONLY || "").split(",").map(s => s.trim()).filter(Boolean);
+              const b = { limit: 25, concurrency: 4, dry_run: process.env.DRY_RUN === "true" };
+              if (only.length) b.only = only;
+              if (process.env.AFTER) b.after_id = process.env.AFTER;
+              console.log(JSON.stringify(b));')
+            resp=$(curl -sS -m 400 -X POST "$URL" \
+              -H "Content-Type: application/json" \
+              -H "x-price-sync-secret: $PRICE_SYNC_SECRET" \
+              -d "$payload") || { echo "::error::Kall $i feilet (nettverk)"; exit 1; }
+            echo "Bunke $i: $resp"
+            read -r p s f nb next < <(echo "$resp" | node -e '
+              let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{
+                try { const j = JSON.parse(d);
+                  if (j.error) { console.error(j.error); process.exit(1) }
+                  console.log([j.processed ?? 0, j.shrunk ?? 0, (j.failed ?? []).length, j.new_bytes ?? 0, j.next_after_id ?? "-"].join(" "))
+                } catch { console.error("Ugyldig svar"); process.exit(1) } })') || { echo "::error::Feil fra funksjonen"; exit 1; }
+            total=$((total + p)); shrunk=$((shrunk + s)); failed=$((failed + f)); bytes=$((bytes + nb))
+            [ "$p" = "0" ] && break
+            [ "$next" = "-" ] && break
+            after="$next"
+          done
+          echo "Ferdig: $total behandlet, $shrunk gjort mindre, $failed feilet, nye filer totalt $((bytes / 1024 / 1024)) MB."
+          [ "$failed" = "0" ] || echo "::warning::$failed bilder feilet og beholder originalen. Se loggen over."
