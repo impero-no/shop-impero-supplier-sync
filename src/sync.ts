@@ -592,6 +592,25 @@ if (mode === 'new-products') {
   console.log();
 }
 
+// ────────────────────────────────
+// Diagnostikk (2026-11-18): spør Komplett og Dustin direkte etter navn/bilde
+// for en liste MPN-er. lookupCompetitorName stopper ved første kilde med navn
+// (vanligvis Power), så denne viser hva de to andre har. Skriver ingenting.
+// Argument: "mpn:ean,mpn:ean,..." (ean valgfri).
+// ────────────────────────────────
+if (mode === 'competitor-images') {
+  const { fetchKomplettByMPN } = await import('./fetchers/komplett.ts');
+  const { fetchDustinByMPN } = await import('./fetchers/dustin.ts');
+  const pairs = (process.argv[3] ?? '').split(',').map(s => s.trim()).filter(Boolean).map(s => s.split(':'));
+  for (const [mpn, ean] of pairs) {
+    const k = await fetchKomplettByMPN(mpn, ean || null).catch(() => null);
+    const d = await fetchDustinByMPN(mpn).catch(() => null);
+    console.log(`${mpn.padEnd(12)} | Komplett: ${k ? `${k.name} | ${k.image_url ?? 'uten bilde'}` : 'ingen treff'}`);
+    console.log(`${' '.repeat(12)} | Dustin:   ${d ? `${d.name} | ${d.image_url ?? 'uten bilde'}` : 'ingen treff'}`);
+  }
+  process.exit(0);
+}
+
 if (mode === 'tdsynnex-debug-tdpn') {
   const tdPartNumber = process.argv[3] || '11965702';
   console.log(`━━━ TD Synnex spot-oppslag (tdsynnexPartNumber): ${tdPartNumber} ━━━`);
