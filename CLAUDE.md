@@ -163,7 +163,11 @@ deretter lages et tildelt issue med listen (gir e-post). Repo variabelen
 - Tak: over `maxNewPerRun` (30) opprettes ingenting, issuet sier fra i stedet.
 - Kjøringen sender aldri `finalize`, se under.
 - Apple sine segmenter hos TD Synnex: `COMPORT:NOTEBOOKS` (MacBook), `COMDESK:DESKTOP`
-  (Mac mini, Mac Studio), `COMDESK:PCALLIN1` (iMac). Finn class for andre produkter med
+  (Mac mini, Mac Studio), `COMDESK:PCALLIN1` (iMac). `COMPORT:NOTEBOOKS` traff
+  10 000 rads cap selv med class/subclass (over 99 % CTO koder), derfor
+  `onlyInStock: true` på det segmentet (44 rader i stedet). Ulempe: en eldre modell
+  som var utsolgt ved baseline og kommer på lager igjen, meldes som ny. Et segment som
+  treffer cap en gir feil og hoppes over, resten kjører videre. Finn class for andre produkter med
   `tdsynnex-debug-batch`, som viser class/subclass.
 - Nye Apple modeller har ofte verken Icecat data eller bilde de første ukene. Da får
   produktet distributørens rå tekst som navn og mangler bilde. Rett navnet i admin
