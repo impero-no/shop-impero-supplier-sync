@@ -24,6 +24,7 @@ on:
         options:
           - tdsynnex
           - tdsynnex-add
+          - new-products
           - full
           - tdsynnex-debug
           - tdsynnex-debug-batch
