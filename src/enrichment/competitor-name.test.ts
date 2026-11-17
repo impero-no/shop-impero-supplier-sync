@@ -2,19 +2,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lookupCompetitorName } from './competitor-name.ts';
 
-function powerResponse(name: string, productId = 123) {
+function powerResponse(name: string, productId = 123, withImage = false) {
+  const productImage = withImage
+    ? { basePath: '/images/h-abc', variants: [{ filename: 'img_w_g.jpg', width: 1200 }] }
+    : undefined;
   return {
     ok: true,
     status: 200,
     json: async () => ({
       matchCount: 1,
-      topProducts: [{ products: [{ productId, title: name, url: '/p/x', price: 100, vatlessPrice: 80 }] }],
+      topProducts: [{ products: [{ productId, title: name, url: '/p/x', price: 100, vatlessPrice: 80, ...(productImage ? { productImage } : {}) }] }],
     }),
   };
 }
 const POWER_NO_MATCH = { ok: true, status: 200, json: async () => ({ matchCount: 0 }) };
 
-function komplettHtml(mpn: string, name: string, image?: string) {
+function komplettHtml(mpn: string, name: string, image?: string | string[]) {
   const json = JSON.stringify({
     name,
     mpn,
@@ -32,18 +35,61 @@ function dustinRscChunk(mpn: string) {
   return `self.__next_f.push([1,"${escapedMpn}${offer},\\"productID\\":\\"x\\""])`;
 }
 
-test('lookupCompetitorName: Power gir treff — Komplett/Dustin kalles aldri', async t => {
+test('lookupCompetitorName: Power gir treff med bilde — Komplett/Dustin kalles aldri', async t => {
   let calls = 0;
   t.mock.method(globalThis, 'fetch', async (url: string) => {
     calls++;
     assert.ok(url.includes('power.no'), 'skal kun kalle Power (søk + lagerstatus)');
-    if (url.includes('suggestions')) return powerResponse('Logitech MX Master 3S Graphite');
+    if (url.includes('suggestions')) return powerResponse('Logitech MX Master 3S Graphite', 123, true);
     return { ok: true, status: 200, json: async () => [{ productId: 123, stockCount: 5 }] };
   });
 
   const result = await lookupCompetitorName({ ean: '5099206107885', mpn: '910-006582' });
-  assert.deepEqual(result, { name: 'Logitech MX Master 3S Graphite', source: 'power' });
+  assert.deepEqual(result, {
+    name: 'Logitech MX Master 3S Graphite',
+    source: 'power',
+    imageUrl: 'https://media.power-cdn.net/images/h-abc/img_w_g.jpg',
+  });
   assert.equal(calls, 2, 'Power gjør ett søkekall + ett lagerstatus-kall ved treff');
+});
+
+test('lookupCompetitorName: Power har navn uten bilde — navnet beholdes, bildet hentes fra Komplett (første i lista)', async t => {
+  t.mock.method(globalThis, 'fetch', async (url: string): Promise<any> => {
+    if (url.includes('suggestions')) return powerResponse('Apple MacBook Pro 14" (M6) 16/1 TB, sølv');
+    if (url.includes('power.no')) return { ok: true, status: 200, json: async () => [{ productId: 123, stockCount: 5 }] };
+    if (url.includes('komplett.no')) {
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          komplettHtml('MHWW4H/A', 'MacBook Pro 14 M6 (2026) 1TB (sølv)', [
+            'https://www.komplett.no/product-media/1.jpg',
+            'https://www.komplett.no/product-media/1_1.jpg',
+          ]),
+      };
+    }
+    throw new Error('Dustin skal ikke kalles når Komplett ga bilde: ' + url);
+  });
+
+  const result = await lookupCompetitorName({ ean: '195951081618', mpn: 'MHWW4H/A' });
+  assert.deepEqual(result, {
+    name: 'Apple MacBook Pro 14" (M6) 16/1 TB, sølv',
+    source: 'power',
+    imageUrl: 'https://www.komplett.no/product-media/1.jpg',
+  });
+});
+
+test('lookupCompetitorName: ingen bilde hos noen — navnet fra Power returneres uten bilde', async t => {
+  t.mock.method(globalThis, 'fetch', async (url: string): Promise<any> => {
+    if (url.includes('suggestions')) return powerResponse('Apple iMac 24" (M6)');
+    if (url.includes('power.no')) return { ok: true, status: 200, json: async () => [{ productId: 123, stockCount: 5 }] };
+    if (url.includes('komplett.no')) return { ok: true, status: 200, text: async () => KOMPLETT_NO_MATCH_HTML };
+    if (url.includes('dustin.no')) return { ok: true, status: 200, url, text: async () => '<html>ingen treff</html>' };
+    throw new Error('uventet URL: ' + url);
+  });
+
+  const result = await lookupCompetitorName({ ean: '195950836639', mpn: 'MH064H/A' });
+  assert.deepEqual(result, { name: 'Apple iMac 24" (M6)', source: 'power' });
 });
 
 test('lookupCompetitorName: Power uten treff, Komplett finner produktet', async t => {

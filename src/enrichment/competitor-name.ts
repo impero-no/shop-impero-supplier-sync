@@ -39,18 +39,31 @@ export async function lookupCompetitorName(input: {
   ean?: string | null;
   mpn: string;
 }): Promise<CompetitorNameResult | null> {
+  // Navnet tas fra første kilde som har det (Power → Komplett → Dustin). Mangler
+  // den kilden bilde, spørres de neste kun for bildets skyld (2026-11-17: nye
+  // MacBook Pro M6/iMac M6 hadde navn hos Power, men bilde kun hos Komplett og
+  // Dustin, og ble stående uten bilde fordi oppslaget stoppet ved Power).
+  let result: CompetitorNameResult | null = null;
+  const consider = (name: string | undefined, source: CompetitorNameSource, imageUrl: string | undefined) => {
+    if (!result && name) result = { name, source, ...(imageUrl ? { imageUrl } : {}) };
+    else if (result && !result.imageUrl && imageUrl) result.imageUrl = imageUrl;
+  };
+  const done = () => Boolean(result?.imageUrl);
+
   if (input.ean) {
     const power = await fetchPowerByEAN(input.ean);
-    if (power?.name) return { name: power.name, source: 'power', ...(power.image_url ? { imageUrl: power.image_url } : {}) };
+    consider(power?.name, 'power', power?.image_url);
+    if (done()) return result;
     await sleep(500); // Samme høflighetspause som Power sin egen batch-henting.
   }
 
   const komplett = await fetchKomplettByMPN(input.mpn, input.ean);
-  if (komplett?.name) return { name: komplett.name, source: 'komplett', ...(komplett.image_url ? { imageUrl: komplett.image_url } : {}) };
+  consider(komplett?.name, 'komplett', komplett?.image_url);
+  if (done()) return result;
   await sleep(800); // Samme pause som Komplett/Dustin sine egne batch-hentinger.
 
   const dustin = await fetchDustinByMPN(input.mpn);
-  if (dustin?.name) return { name: dustin.name, source: 'dustin', ...(dustin.image_url ? { imageUrl: dustin.image_url } : {}) };
+  consider(dustin?.name, 'dustin', dustin?.image_url);
 
-  return null;
+  return result;
 }

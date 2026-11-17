@@ -17545,34 +17545,6 @@
       "nameSource": "power",
       "imageUrl": "https://media.power-cdn.net/images/h-b8486bec15cdd597954f63cb7b43f007/products/4316319/4316319_9_1200x1200_w_g.jpg"
     },
-    "ean:195951081618": {
-      "status": "matched",
-      "lastCheckedAt": "2026-11-17T10:44:33.324Z",
-      "name": "Apple MacBook Pro 14\" (M6) 16/1 TB, sølv",
-      "specs": {},
-      "nameSource": "power"
-    },
-    "ean:195951082080": {
-      "status": "matched",
-      "lastCheckedAt": "2026-11-17T10:44:34.791Z",
-      "name": "Apple MacBook Pro 14\" (M6) 24/1 TB, sølv",
-      "specs": {},
-      "nameSource": "power"
-    },
-    "ean:195951080208": {
-      "status": "matched",
-      "lastCheckedAt": "2026-11-17T10:44:35.803Z",
-      "name": "Apple MacBook Pro 14\" (M6) 16/1 TB, stellarsvart",
-      "specs": {},
-      "nameSource": "power"
-    },
-    "ean:195951082554": {
-      "status": "matched",
-      "lastCheckedAt": "2026-11-17T10:44:37.481Z",
-      "name": "Apple MacBook Pro 14\" (M6) 32/1 TB, sølv",
-      "specs": {},
-      "nameSource": "power"
-    },
     "ean:195951441306": {
       "status": "matched",
       "lastCheckedAt": "2026-11-17T10:44:38.718Z",
@@ -17588,13 +17560,6 @@
       "specs": {},
       "nameSource": "power",
       "imageUrl": "https://media.power-cdn.net/images/h-1eb7bc65501af29631fc20f3cc164e49/products/4525603/4525603_42_1200x1200_w_g.jpg"
-    },
-    "ean:195951080673": {
-      "status": "matched",
-      "lastCheckedAt": "2026-11-17T10:44:45.404Z",
-      "name": "Apple MacBook Pro 14\" (M6) 24/1 TB, stellarsvart",
-      "specs": {},
-      "nameSource": "power"
     }
   }
 }

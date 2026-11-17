@@ -39,11 +39,21 @@ interface KomplettOffer {
 
 interface KomplettProductJsonLd {
   name?: string;
-  image?: string;
+  // Komplett sender en LISTE med bilde-URL-er (hovedbilde først), ikke én
+  // streng. Se firstImage under.
+  image?: string | string[];
   sku?: string;
   mpn?: string;
   offers?: KomplettOffer;
   additionalProperty?: Array<{ name?: string; value?: string }>;
+}
+
+// Bekreftet 2026-11-17: `image` i JSON-LD er en liste (opptil 10 URL-er).
+// Før dette ble hele lista sendt som image_url, og price-sync (som krever én
+// https-streng) forkastet den stille, så Komplett-bilder ble aldri brukt.
+function firstImage(image: KomplettProductJsonLd['image']): string | undefined {
+  const url = Array.isArray(image) ? image[0] : image;
+  return typeof url === 'string' && url.startsWith('https://') ? url : undefined;
 }
 
 function extractProductJsonLd(html: string): KomplettProductJsonLd | null {
@@ -89,7 +99,7 @@ export async function fetchKomplettByMPN(mpn: string, expectedEan?: string | nul
       price_inc_vat: priceIncVat,
       price_ex_vat: priceIncVat ? Math.round((priceIncVat / 1.25) * 100) / 100 : null,
       available: data.offers?.availability?.includes('InStock') ?? false,
-      image_url: data.image || undefined,
+      image_url: firstImage(data.image),
       product_url: data.offers?.url ?? resp.url,
       updated_at: new Date().toISOString(),
     };
