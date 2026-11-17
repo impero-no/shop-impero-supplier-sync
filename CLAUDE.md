@@ -35,7 +35,7 @@ kun fordi navn og bilde fallbacken i `src/enrichment/competitor-name.ts` bruker 
 - `data/icecat-cache.json` — git committed cache, se "Icecat berikelse".
 - `.github/workflows/` — `tdsynnex-sync.yml` (daglig kl. 23:20 UTC, rett etter midnatt norsk tid), `also-sync.yml` (daglig,
   disabled), `isicom-sync.yml` (manuell), `session-renewal.yml` (disabled),
-  `icecat-shrink.yml` (manuell, se "Bildestørrelse").
+  `icecat-shrink.yml` og `icecat-delete-originals.yml` (manuelle, se "Bildestørrelse").
 
 ## Teknisk arkitektur
 
@@ -198,12 +198,15 @@ krever bilde, MPN og rapportert lager for at et produkt kan gjøres synlig.
 
 ### Bildestørrelse
 
-`import-icecat-images` lagrer originalen i `product-images/icecat/` og gir produktet en
-WebP på maks 1200 px (kvalitet 75) i `icecat-web/`. Skaleringen gjøres én gang av
-Supabase sin bildeskalering (`/render/image/`) og lagres som vanlig fil. Butikken og
-`catalog-feed` bruker aldri `/render/image/`. Feiler skaleringen, får produktet
-originalen. `icecat-shrink.yml` kaller `shrink-icecat-images`, som gjør det samme med
-produkter som fortsatt peker på `icecat/` (også de der skaleringen feilet om natten).
+`import-icecat-images` laster opp originalen til `product-images/icecat/`, gir produktet
+en WebP på maks 1200 px (kvalitet 75) i `icecat-web/` og sletter så originalen.
+Skaleringen gjøres én gang av Supabase sin bildeskalering (`/render/image/`) og lagres
+som vanlig fil. Butikken og `catalog-feed` bruker aldri `/render/image/`. Feiler
+skaleringen, får produktet originalen, og den beholdes. `icecat-shrink.yml` kaller
+`shrink-icecat-images`, som gjør det samme med produkter som fortsatt peker på
+`icecat/`. `icecat-delete-originals.yml` kaller `delete-icecat-originals`, som sletter
+filer i `icecat/` som ingen produkter, produktbilder, pakker eller ordre-snapshots
+peker på (prøvekjøring som standard).
 
 ## Konkurrent fetcherne (kun navn/bilde fallback her)
 
