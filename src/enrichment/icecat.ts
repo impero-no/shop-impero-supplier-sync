@@ -91,6 +91,16 @@ async function callIcecat(params: Record<string, string>): Promise<IcecatLookupR
     const resp = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
 
     if (resp.status === 404) return { status: 'not_found' };
+    // Ukjent EAN gir HTTP 400 (StatusCode 16, "The GTIN can not be found"),
+    // ikke 404. Bekreftet 2026-11-17: før dette ble slike produkter tolket som
+    // forbigående feil, prøvd på nytt hver natt, og fikk aldri konkurrent-
+    // fallbacken (navn/bilde fra Power/Komplett/Dustin).
+    if (resp.status === 400) {
+      const body = (await resp.json().catch(() => null)) as { StatusCode?: number; Message?: string } | null;
+      if (body?.StatusCode === 16 || /can ?not be found|not found/i.test(body?.Message ?? '')) {
+        return { status: 'not_found' };
+      }
+    }
     if (!resp.ok) return { status: 'error', message: `Icecat HTTP ${resp.status}` };
 
     const body = (await resp.json().catch(() => null)) as IcecatApiResponse | null;

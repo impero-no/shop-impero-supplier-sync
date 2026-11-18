@@ -53,7 +53,7 @@ test('lookupCompetitorName: Power gir treff med bilde — Komplett/Dustin kalles
   assert.equal(calls, 2, 'Power gjør ett søkekall + ett lagerstatus-kall ved treff');
 });
 
-test('lookupCompetitorName: Power har navn uten bilde — navnet beholdes, bildet hentes fra Komplett (første i lista)', async t => {
+test('lookupCompetitorName: Power har navn uten bilde — navnet beholdes, Dustin-bilde foretrekkes over Komplett', async t => {
   t.mock.method(globalThis, 'fetch', async (url: string): Promise<any> => {
     if (url.includes('suggestions')) return powerResponse('Apple MacBook Pro 14" (M6) 16/1 TB, sølv');
     if (url.includes('power.no')) return { ok: true, status: 200, json: async () => [{ productId: 123, stockCount: 5 }] };
@@ -68,7 +68,36 @@ test('lookupCompetitorName: Power har navn uten bilde — navnet beholdes, bilde
           ]),
       };
     }
-    throw new Error('Dustin skal ikke kalles når Komplett ga bilde: ' + url);
+    if (url.includes('dustin.no')) {
+      return {
+        ok: true,
+        status: 200,
+        url: 'https://www.dustin.no/product/1/apple-macbook-pro',
+        text: async () =>
+          `<html><title>Apple MacBook Pro (2026) Sølv (MHWW4H/A)</title>${dustinRscChunk('MHWW4H/A')}` +
+          `self.__next_f.push([1,"\\"image\\":\\"https://cf-images.dustin.eu/img.jpg\\""])</html>`,
+      };
+    }
+    throw new Error('uventet URL: ' + url);
+  });
+
+  const result = await lookupCompetitorName({ ean: '195951081618', mpn: 'MHWW4H/A' });
+  assert.deepEqual(result, {
+    name: 'Apple MacBook Pro 14" (M6) 16/1 TB, sølv',
+    source: 'power',
+    imageUrl: 'https://cf-images.dustin.eu/img.jpg',
+  });
+});
+
+test('lookupCompetitorName: kun Komplett har bilde — Komplett-bildet (første i lista) brukes', async t => {
+  t.mock.method(globalThis, 'fetch', async (url: string): Promise<any> => {
+    if (url.includes('suggestions')) return powerResponse('Apple MacBook Pro 14" (M6) 16/1 TB, sølv');
+    if (url.includes('power.no')) return { ok: true, status: 200, json: async () => [{ productId: 123, stockCount: 5 }] };
+    if (url.includes('komplett.no')) {
+      return { ok: true, status: 200, text: async () => komplettHtml('MHWW4H/A', 'MacBook Pro', ['https://www.komplett.no/product-media/1.jpg', 'https://www.komplett.no/product-media/1_1.jpg']) };
+    }
+    if (url.includes('dustin.no')) return { ok: true, status: 200, url, text: async () => '<html>ingen treff</html>' };
+    throw new Error('uventet URL: ' + url);
   });
 
   const result = await lookupCompetitorName({ ean: '195951081618', mpn: 'MHWW4H/A' });

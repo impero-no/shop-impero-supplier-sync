@@ -80,3 +80,20 @@ test('lookupIcecatProduct går videre til neste steg selv om et tidligere steg f
   const result = await lookupIcecatProduct({ ean: '197489946966', manufacturer: 'HP', mpn: 'A3ZJ3ET#UUW' });
   assert.equal(result.status, 'matched');
 });
+
+test('lookupIcecatProduct: HTTP 400 "The GTIN can not be found" er not_found, ikke error', async t => {
+  t.mock.method(globalThis, 'fetch', async (url: string) => {
+    if (url.includes('GTIN=')) {
+      return { ok: false, status: 400, json: async () => ({ StatusCode: 16, Code: 400, Error: 'Bad Request', Message: 'The GTIN can not be found' }) };
+    }
+    return { ok: false, status: 404, json: async () => ({ StatusCode: 14, Message: 'Product has brand restrictions or access is limited' }) };
+  });
+  const result = await lookupIcecatProduct({ ean: '195951081144', manufacturer: 'Apple', mpn: 'MHWV4H/A' });
+  assert.equal(result.status, 'not_found');
+});
+
+test('lookupIcecatProduct: annen HTTP 400 er fortsatt error', async t => {
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: false, status: 400, json: async () => ({ StatusCode: 99, Message: 'Invalid parameter' }) }));
+  const result = await lookupIcecatProduct({ ean: '195951081144', manufacturer: 'Apple', mpn: 'MHWV4H/A' });
+  assert.equal(result.status, 'error');
+});

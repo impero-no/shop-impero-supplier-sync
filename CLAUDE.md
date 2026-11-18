@@ -218,7 +218,13 @@ Ingen leverandør har et kort produktnavn, kun full spesifikasjonstekst. Derfor:
   `null` og distributørnavnet brukes.
 - `competitor-name.ts` — fallback når Icecat mangler treff eller meningsfullt navn:
   Power (EAN) → Komplett (MPN) → Dustin (MPN). Gir navn og `image_url`, ingen specs.
-  `nameSource` i cachen sier hvor navnet kom fra.
+  `nameSource` i cachen sier hvor navnet kom fra. Navnet tas fra første kilde som har
+  det, men mangler den bilde, spørres de neste kun for bildet. Komplett bilder er siste
+  utvei: `price-sync` laster bildet ned fra serveren, og Komplett sin bot beskyttelse
+  avviser det. Komplett sin JSON-LD har `image` som liste, første URL brukes.
+- Icecat svarer **HTTP 400 med StatusCode 16** ("The GTIN can not be found") for ukjent
+  EAN, ikke 404. Det tolkes som `not_found`. Før ble det tolket som forbigående feil,
+  så produktet fikk aldri konkurrent fallback og ble prøvd på nytt hver natt.
 - `cache.ts` — `data/icecat-cache.json`, nøkkel `ean:<ean>` eller `mpn:<merke>|<mpn>`.
   `matched` permanent, `not_found` prøves igjen etter 14 dager, forbigående feil
   skrives aldri. Git committed (ikke `actions/cache`, som kastes etter 7 dager).
@@ -270,7 +276,7 @@ node --experimental-strip-types src/sync.ts icecat-debug <mpn> [produsent] [ean]
 node --experimental-strip-types src/sync.ts tdsynnex-add <mpn,mpn,...>  # Legg inn bestemte MPN er
 node --experimental-strip-types src/sync.ts new-products [maks] [dry-run]
 npm run sync:also / sync:tdsynnex / sync:isicom            # Dry run, skriver ingenting
-npm test                                                   # 37 tester, node:test
+npm test                                                   # 42 tester, node:test
 npm run typecheck
 ```
 
@@ -278,7 +284,8 @@ Debug moduser for TD Synnex (`tdsynnex-sync.yml` sin `workflow_dispatch`, valgfr
 `part` input): `tdsynnex-debug`, `tdsynnex-debug-tdpn`, `tdsynnex-debug-raw`,
 `tdsynnex-debug-raw-mpn`, `tdsynnex-debug-raw-mpn-extra`, `tdsynnex-debug-count`,
 `tdsynnex-discover [class:subclass]`, `mpns-debug`, `icecat-images` (no-op som kun
-kjører bildesteget).
+kjører bildesteget), `competitor-images` (`part` = `mpn:ean,...`, viser navn og bilde hos
+Komplett og Dustin).
 
 ## Priser
 

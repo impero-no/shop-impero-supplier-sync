@@ -43,12 +43,23 @@ export async function lookupCompetitorName(input: {
   // den kilden bilde, spørres de neste kun for bildets skyld (2026-11-17: nye
   // MacBook Pro M6/iMac M6 hadde navn hos Power, men bilde kun hos Komplett og
   // Dustin, og ble stående uten bilde fordi oppslaget stoppet ved Power).
+  //
+  // Komplett-bilder er siste utvei: price-sync laster bildet ned fra serveren,
+  // og Komplett sin bot-beskyttelse avviste det (bekreftet 2026-11-17: 3 av 3
+  // Komplett-bilder ble ikke lagret, 2 av 2 fra Dustin ble det). Har vi bare et
+  // Komplett-bilde, spørres Dustin også, og Dustin sitt bilde foretrekkes.
   let result: CompetitorNameResult | null = null;
+  let imageFromKomplett = false;
   const consider = (name: string | undefined, source: CompetitorNameSource, imageUrl: string | undefined) => {
-    if (!result && name) result = { name, source, ...(imageUrl ? { imageUrl } : {}) };
-    else if (result && !result.imageUrl && imageUrl) result.imageUrl = imageUrl;
+    if (!result && name) {
+      result = { name, source, ...(imageUrl ? { imageUrl } : {}) };
+      imageFromKomplett = Boolean(imageUrl) && source === 'komplett';
+    } else if (result && imageUrl && (!result.imageUrl || (imageFromKomplett && source !== 'komplett'))) {
+      result.imageUrl = imageUrl;
+      imageFromKomplett = source === 'komplett';
+    }
   };
-  const done = () => Boolean(result?.imageUrl);
+  const done = () => Boolean(result?.imageUrl) && !imageFromKomplett;
 
   if (input.ean) {
     const power = await fetchPowerByEAN(input.ean);
