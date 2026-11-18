@@ -17576,6 +17576,78 @@
       "specs": {},
       "nameSource": "power",
       "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728264/apple-macbook-pro-2026-stellarsvart-apple-m6-1212-24gb-1000gb-142.jpg"
+    },
+    "ean:195951081618": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:33:31.085Z",
+      "name": "Apple MacBook Pro 14\" (M6) 16/1 TB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728262/apple-macbook-pro-2026-slv-apple-m6-1212-16gb-1000gb-142.jpg"
+    },
+    "ean:195951082080": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:33:37.123Z",
+      "name": "Apple MacBook Pro 14\" (M6) 24/1 TB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728262/apple-macbook-pro-2026-slv-apple-m6-1212-24gb-1000gb-142.jpg"
+    },
+    "ean:195951081144": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:33:42.650Z",
+      "name": "Apple MacBook Pro 14\" (M6) 32/1 TB, stellarsvart",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728264/apple-macbook-pro-2026-stellarsvart-apple-m6-1212-32gb-1000gb-142.jpg"
+    },
+    "ean:195951082554": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:33:48.623Z",
+      "name": "Apple MacBook Pro 14\" (M6) 32/1 TB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011728262/apple-macbook-pro-2026-slv-apple-m6-1212-32gb-1000gb-142.jpg"
+    },
+    "ean:195950836639": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:33:54.936Z",
+      "name": "Apple iMac 24\" (M6) 10C 256 GB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011875492/apple-imac-2026-slv-apple-m6-1010-16gb-256gb-235.jpg"
+    },
+    "ean:195950839944": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:34:01.278Z",
+      "name": "Apple iMac 24\" (M6) 12C 256 GB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011875492/apple-imac-2026-slv-apple-m6-1212-16gb-256gb-235.jpg"
+    },
+    "ean:195950840407": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:34:07.163Z",
+      "name": "Apple iMac 24\" (M6) 12C 16/512 GB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011875492/apple-imac-2026-slv-apple-m6-1212-16gb-512gb-235.jpg"
+    },
+    "ean:195950840865": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:34:13.072Z",
+      "name": "Apple iMac 24\" (M6) 12C 24/512 GB, sølv",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011875492/apple-imac-2026-slv-apple-m6-1212-24gb-512gb-235.jpg"
+    },
+    "ean:195950844085": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-18T18:34:18.741Z",
+      "name": "Apple iMac 24\" (M6) 12C 256 GB, blå",
+      "specs": {},
+      "nameSource": "power",
+      "imageUrl": "https://cf-images.dustin.eu/cdn-cgi/image/format=auto,quality=75,width=500,fit=contain/image/d2000010011875494/apple-imac-2026-blå-apple-m6-1212-16gb-256gb-235.jpg"
     }
   }
 }
