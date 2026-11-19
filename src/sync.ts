@@ -611,6 +611,33 @@ if (mode === 'competitor-images') {
   process.exit(0);
 }
 
+// ────────────────────────────────
+// Diagnostikk (2026-11-19): hva har TD Synnex LAGT INN i katalogen siden en
+// dato (createdFrom)? Kun lesing. Brukt til å vurdere createdFrom som grunnlag
+// for new-products. Argumenter: <produsent> <dato YYYY-MM-DD> [class:subclass]
+// ────────────────────────────────
+if (mode === 'tdsynnex-created') {
+  const manufacturer = process.argv[3] || 'Apple';
+  const since = process.argv[4] || new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  const classArg = process.argv[5];
+  const classFilter = classArg ? { class: classArg.split(':')[0], subclass: classArg.split(':')[1] } : undefined;
+  const createdFrom = `${since}T00:00:00.000`;
+  console.log(`━━━ TD Synnex: ${manufacturer} lagt inn siden ${since}${classArg ? ` (${classArg})` : ''} ━━━`);
+  try {
+    const products = await fetchTDSynnexByManufacturers([manufacturer], classFilter, { createdFrom });
+    const cto = products.filter(p => /_cto$/i.test(p.mpn) || /^Z[0-9A-Z]{3}/i.test(p.mpn) && !/\/A$/i.test(p.mpn));
+    const std = products.filter(p => !cto.includes(p));
+    console.log(`Totalt ${products.length}, herav ${cto.length} CTO-koder. Standardvarer (${std.length}):`);
+    for (const p of std.sort((a, b) => a.name.localeCompare(b.name))) {
+      console.log(`${p.mpn.padEnd(14)} | ${(p.category2 ?? '—').padEnd(24)} | lager ${String(p.available_qty).padStart(4)} | ${p.price_ex_vat ?? '—'} kr | ${p.name.slice(0, 90)}`);
+    }
+  } catch (err) {
+    console.error('❌ createdFrom-oppslag feilet:', err);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 if (mode === 'tdsynnex-debug-tdpn') {
   const tdPartNumber = process.argv[3] || '11965702';
   console.log(`━━━ TD Synnex spot-oppslag (tdsynnexPartNumber): ${tdPartNumber} ━━━`);

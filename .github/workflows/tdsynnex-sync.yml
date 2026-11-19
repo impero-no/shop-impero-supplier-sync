@@ -35,6 +35,7 @@ on:
           - tdsynnex-discover
           - mpns-debug
           - competitor-images
+          - tdsynnex-created
           - icecat-images
       part:
         description: 'Del-/varenummer for debug-moduser (komma-separert liste for tdsynnex-debug-batch og tdsynnex-add), ELLER produsentnavn for tdsynnex-discover (f.eks. "Apple")'

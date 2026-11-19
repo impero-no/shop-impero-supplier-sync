@@ -93,6 +93,9 @@ interface TDSynnexCatalogueRequest {
   productStatusCode?: 'Active' | 'Allocated' | 'Discontinued' | 'PhasedOut';
   modifiedFrom?: string; // ISO datetime: YYYY-MM-DDTHH:mm:ss.SSS
   modifiedTo?: string;
+  // Dato varen ble lagt inn i TD Synnex sin katalog (samme format som modifiedFrom).
+  createdFrom?: string;
+  createdTo?: string;
   page: number;
   pageSize: number;
 }
@@ -313,7 +316,7 @@ export async function fetchTDSynnexByManufacturers(
   // selv med class/subclass, fordi >99 % av radene er CTO-koder uten lager.
   // Med onlyInStock kommer bare varer med lager, som er det new-products
   // uansett vil ha.
-  { onlyInStock = false }: { onlyInStock?: boolean } = {}
+  { onlyInStock = false, createdFrom }: { onlyInStock?: boolean; createdFrom?: string } = {}
 ): Promise<SupplierProduct[]> {
   const results: SupplierProduct[] = [];
 
@@ -331,6 +334,7 @@ export async function fetchTDSynnexByManufacturers(
         includePrice: true,
         includeStock: true,
         onlyInStock,
+        ...(createdFrom ? { createdFrom } : {}),
         page,
         pageSize: 100,
       });
