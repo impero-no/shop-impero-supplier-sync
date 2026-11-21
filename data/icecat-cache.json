@@ -17595,6 +17595,15 @@
       "specs": {},
       "nameSource": "power",
       "imageUrl": "https://media.power-cdn.net/images/h-1eb7bc65501af29631fc20f3cc164e49/products/4525603/4525603_42_1200x1200_w_g.jpg"
+    },
+    "ean:8592978933890": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-21T04:04:13.072Z",
+      "name": "HP LaserJet Tray 2-Roller Kit",
+      "specs": {
+        "produkttype": "Printer Kits"
+      },
+      "nameSource": "icecat"
     }
   }
 }
