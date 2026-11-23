@@ -17604,6 +17604,22 @@
         "produkttype": "Printer Kits"
       },
       "nameSource": "icecat"
+    },
+    "ean:199275169519": {
+      "status": "matched",
+      "lastCheckedAt": "2026-11-23T03:49:07.499Z",
+      "name": "Lenovo ThinkStation PGX — GB10, 128GB/4TB",
+      "specs": {
+        "produkttype": "PCs/Workstations",
+        "prosessor": "GB10",
+        "minne": "128 GB",
+        "lagring": "4 TB SSD",
+        "grafikk": "NVIDIA Blackwell",
+        "operativsystem": "DGX OS",
+        "nettverk": "Wi-Fi 7 (802.11be), Bluetooth 5.3",
+        "farge": "Black"
+      },
+      "nameSource": "icecat"
     }
   }
 }
